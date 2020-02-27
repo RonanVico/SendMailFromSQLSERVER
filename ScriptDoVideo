@@ -1,0 +1,120 @@
+---------------------------------------------------------------------------------
+-- SQL Database Mail: Enviar e-mail por t-sql usando o Gmail
+---------------------------------------------------------------------------------
+-- Passo 1) Pré-requisito para usar GMAIL
+-- Acessar: https://myaccount.google.com/security e configurar "Allow less secure apps: ON"
+ 
+-- Passo 2) Pré-requisito para enviar e-mails do SQL - Habilitar "Database Mail XPs"
+execute sp_configure 'Show Advanced Options', 1
+reconfigure
+execute sp_configure 'Database Mail XPs', 1
+reconfigure
+ 
+-- Passo 3) -- CONFIGURAR A CONTA DO GMAIL NO SQL
+-- Adicionar conta de e-mail
+execute msdb.dbo.sysmail_add_account_sp
+    -- Dados fíxos
+    @mailserver_name = 'smtp.gmail.com', -- endereço do servidor de envio de e-mails
+    @port = 587, -- porta de comunicação
+    @enable_ssl = 1, -- habilitar SSL (criptografia durante o envio de dados)
+    -- Dados da sua conta
+    @account_name = 'Gmail_Conta', -- nome da conta dentro do SQL
+    @display_name = 'Banco SQL',   -- Nome que aparecerá como remetente do e-mail
+    @email_address = 'testeenviorv@gmail.com',
+    @username = 'testeenviorv@gmail.com',
+    @password = '123456789101010'
+ 
+-- Passo 4) Adicionar perfil e associar a conta
+-- Adicionar perfil para envio de e-mail
+execute msdb.dbo.sysmail_add_profile_sp
+    @profile_name = 'Gmail_Perfil',
+    @description = 'Perfil para envio de notificações do SQL.'
+-- Associar o perfil a conta
+execute msdb.dbo.sysmail_add_profileaccount_sp
+    @profile_name = 'Gmail_Perfil',
+    @account_name = 'Gmail_Conta',
+    @sequence_number = 1
+ 
+ 
+-- Feito! :-)
+ 
+ 
+-- ENVIAR UM E-MAIL DE TESTES PELO SQL! (help: https://docs.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sp-send-dbmail-transact-sql)
+execute msdb.dbo.sp_send_dbmail 
+    @profile_name = 'Gmail_Perfil',
+    @recipients = 'ronanvico@hotmail.com',
+    @subject = 'EMAIL 2 ',
+    @body = 'Corpo da mensagem de teste.'
+ 
+ 
+ 
+
+--TABELAS  RELACIONADAS AO ENVIO DE E-MAIL
+select * from msdb.dbo.sysmail_account
+ 
+-- Perfis existentes
+select * from msdb.dbo.sysmail_profile
+ 
+-- Associações Perfil & Conta
+select * from msdb.dbo.sysmail_profileaccount
+ 
+-- Emails enviados
+select *  from msdb.dbo.sysmail_mailitems
+ 
+-- Consultar logs do gerenciador de e-mails
+select *  from msdb.dbo.sysmail_log
+ 
+
+
+ CREATE TABLE TB_BODYS
+ (
+	BODY NVARCHAR(MAX)
+ )
+
+  CREATE TABLE TB_EMAILS
+ (
+	EMAIL NVARCHAR(MAX)
+ )
+
+
+
+ insert into TB_BODYS
+ values ('COMPRE PRODUTO1'),('COMPRE PRODUTO2')
+ select * From TB_BODYS
+
+ insert into tb_Emails 
+ values ('email2@hotmail.com')
+ 
+ select * From tb_emails
+
+ select * From TB_BODYS
+
+
+
+
+
+ DECLARE @STRING_SQL NVARCHAR(MAX);
+ Select
+
+ @STRING_SQL = stuff( (
+	select 
+		';execute msdb.dbo.sp_send_dbmail 
+		@profile_name = ''Gmail_Perfil'',
+		@recipients = ''' + email.email + ''',
+		@subject = ''EMAIL 2 '',
+		@body = '''+ body.body +''' ' EXECUTAR
+	From tb_emails email ,tb_bodys body 
+	for xml path(''),type
+).value('.','nvarchar(max)'),1,1,'')
+
+EXECUTE SP_EXECUTESQL @STRING_SQL
+
+
+SELECT * FROM TB_BODYS
+
+
+
+
+
+  
+ 
